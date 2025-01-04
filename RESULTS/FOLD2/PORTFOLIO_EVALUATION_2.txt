@@ -1,0 +1,11 @@
+Final Total Capital: $3199183.8 
+Investment Period: 2019-12-24 - 2021-08-24 (435 Business Days) 
+Portfolio ROI: 219.92% 
+Benchmark ROI: 39.46% 
+Risk-free Rate: 2.81% 
+Portfolio Alpha: 0.0031 
+Portfolio Beta: 0.4301 
+Portfolio Sharpe Ratio: 0.0894 
+Portfolio Treynor Ratio: 0.008 
+Portfolio Information Ratio: 0.0657 
+Portfolio Max Drawdown: -35.38%
