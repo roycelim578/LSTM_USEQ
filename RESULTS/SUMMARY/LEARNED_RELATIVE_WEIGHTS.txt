@@ -1,0 +1,24 @@
+======================================== 
+ Learned Relative Feature Weights
+======================================== 
+Quarter_Sin: 0.0864 
+Quarter_Cos: 0.0589 
+DEMA_SHORT: 0.0535 
+Pct_Surprise: 0.0518 
+EPS: 0.0515 
+EMA_SHORT: 0.0505 
+EMA_LONG: 0.0485 
+PCT_REALGDP: 0.0483 
+PLUS_DI: 0.0473 
+MINUS_DI: 0.0473 
+MACD_HIST: 0.0460 
+GARCH_Sig: 0.0452 
+Pct_PriceN: 0.0445 
+FFR: 0.0438 
+Pct_Price: 0.0436 
+RSI: 0.0433 
+Pct_EPS: 0.0433 
+Pct_EPS_YTY: 0.0433 
+T10Y2Y: 0.0431 
+INFLATION: 0.0316 
+DEMA_LONG: 0.0284 

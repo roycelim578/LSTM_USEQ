@@ -10,6 +10,8 @@ Created on Tue Dec 31 08:53:22 2024
 # Libraries
 ##############################################
 
+from pathlib import Path
+import json
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,8 +27,7 @@ from torch.utils.data import Dataset
 ##############################################
 
 #Directories
-wd = '/Users/roycelim/Desktop/QuantDev Project/RNN_USEQ/RNN_USEQ_MARK6'
-raw_wd = '/Users/roycelim/Desktop/QuantDev Project/Raw Data/USEQ'
+wd = str(Path(__file__).resolve().parents[2])
 
 lib_tickers = {
     'COMMUNICATION_SERVICES':
@@ -149,8 +150,8 @@ class StockPortfolio:
 
     def __init__(self,
                  cap_start: float = 1e6,
-                 leverage: float = 5.0,
-                 commission_rate: float = 0.001,
+                 leverage: float = 4.0,
+                 commission_rate: float = 1e-4,
                  n_holding = 5,
                  daily_hard_SL = 2.0,
                  daily_OTC_SL = 1.0,
@@ -195,11 +196,10 @@ class StockPortfolio:
         self.pos_hard_SL   = pos_hard_SL
         self.pos_OTC_SL    = pos_OTC_SL
 
-        # Commission & Leverage parameters
+        # Miscellaneous Parameters
         self.leverage = leverage
         self.commission_rate = commission_rate
-
-        self.stoploss_counter = 0    
+        self.investment_duration = None
 
     def buy_position(self, date, symbol, quantity, price):
         cost = quantity * price
@@ -325,20 +325,28 @@ class StockPortfolio:
 
         print(f"[UPDATE] Portfolio value on {date}: ${self.cap_total:.2f} (Change: {daily_return*100:.2f}%)")
 
-    def plot_performance(self):
+    def plot_performance(self, benchmark_returns, Rf):
         if len(self.portfolio_history) == 0:
             print("[INFO] No portfolio history to plot.")
             return
-
+    
         daily_val = self.portfolio_history.groupby('Current_Date')['Cap_Total'].max()
-
-        fig, ax = plt.subplots()
+    
+        fig, ax = plt.subplots(figsize=(12, 6))
         ax.plot(daily_val.index, daily_val.values, color='blue', label='Portfolio Value')
+    
+        benchmark_val = benchmark_returns.add(1).cumprod() * self.cap_start
+        ax.plot(benchmark_val.index, benchmark_val.values, color='orange', label='Benchmark (SPY)')
+        
+        rf_val = self.cap_start * ((1 + Rf / 252) ** (benchmark_val.index - benchmark_val.index[0]).days)
+        ax.plot(benchmark_val.index, rf_val, color='grey', label='Risk-free (2Y US Tsy)')
+    
+        ax.set_xlabel("Date")
         ax.set_ylabel("Portfolio Value ($)")
-        ax.set_title("Daily Portfolio Value")
-        ax.tick_params(axis='x', labelrotation = 30)
+        ax.set_title(f"Daily Portfolio Value vs Benchmark (Fold {fold})")
+        ax.tick_params(axis='x', labelrotation=30)
         ax.legend()
-
+    
         plt.tight_layout()
         plt.show()
         
@@ -358,7 +366,7 @@ class StockPortfolio:
             self.current_day_idx = day_idx
             print(f"Processing date: {date}")
 
-            leveraged_nominal_value = self.leverage * self.cap_total
+            leveraged_nominal_value = min(self.leverage * self.cap_start, self.leverage * self.cap_total)
             
             if date in orders_df.index:
                 day_orders = orders_df.loc[[date]]
@@ -369,7 +377,7 @@ class StockPortfolio:
                     mc = rowo['Market_Cond']
                     sym = rowo['Ticker']
 
-                    if mc == 1: cap_pct = 0.20 #Bull
+                    if mc == 1: cap_pct = 0.1 #Bull
                     else: cap_pct = 0.00  #Bear
 
                     if sym in price_data_dict[date]:
@@ -391,7 +399,7 @@ class StockPortfolio:
             
         self.set_holdings_history()
         self.portfolio_evaluations(price_data_dict, benchmark_returns, Rf)
-        self.plot_performance()
+        self.plot_performance(benchmark_returns, Rf)
 
     def check_intraday_stops(self, date, daily_prices):
         to_close = []
@@ -418,7 +426,6 @@ class StockPortfolio:
 
         for (idx, sym, q, stop_px) in to_close:
             self.sell_position(date, sym, q, stop_px)
-            self.stoploss_counter += 1
 
     def check_eod_stops(self, date, daily_prices):
         to_close = []
@@ -445,7 +452,6 @@ class StockPortfolio:
 
         for (idx, sym, q, px) in to_close:
             self.sell_position(date, sym, q, px)
-            self.stoploss_counter += 1
 
     def auto_close_positions(self, date, daily_prices):
         to_close = []
@@ -481,28 +487,48 @@ class StockPortfolio:
         dates = np.sort(np.array([*price_data_dict.keys()]).astype('<M8[D]'))
         start_date = dates[0]
         end_date = dates[-1]
-        print(start_date, end_date)
-        investment_duration = np.busday_count(start_date, end_date)
-        benchmark_return = (np.prod(np.array(benchmark_returns) + 1) - 1) * 100
-        alpha = self.calculate_alpha(benchmark_returns, Rf)
-        beta = self.calculate_beta(benchmark_returns)
-        sharpe_ratio = self.calculate_sharpe_ratio(Rf)
-        treynor_ratio = self.calculate_treynor_ratio(benchmark_returns, Rf)
-        information_ratio = self.calculate_information_ratio(benchmark_returns)
-        max_drawdown = self.calculate_max_drawdown()
+        self.investment_duration = np.busday_count(start_date, end_date)
+        
+        eval_dict = {}
+        
+        eval_dict['portfolio_return'] = float(100 * (self.cap_total / self.cap_start - 1) * (252 / self.investment_duration))
+        eval_dict['benchmark_return'] = float(100 * (np.prod(np.array(benchmark_returns) + 1) - 1) * (252 / self.investment_duration))
+        eval_dict['Rf_return'] = float(100 * Rf)
+        
+        eval_dict['mean_return'] = float(np.mean(self.returns_history) * 100)
+        eval_dict['std_return'] = float(np.std(self.returns_history) * 100)
+        
+        eval_dict['alpha'] = float(self.calculate_alpha(benchmark_returns, Rf))
+        eval_dict['beta'] = float(self.calculate_beta(benchmark_returns))
+        
+        eval_dict['sharpe_ratio'] = float(self.calculate_sharpe_ratio(Rf))
+        eval_dict['sharpe_ratio_benchmark'] = float(self.calculate_sharpe_ratio(Rf, benchmark = benchmark_returns))
+        eval_dict['sortino_ratio'] = float(self.calculate_sortino_ratio(Rf))
+        eval_dict['sortino_ratio_benchmark'] = float(self.calculate_sortino_ratio(Rf, benchmark = benchmark_returns))
+        eval_dict['information_ratio'] = float(self.calculate_information_ratio(benchmark_returns))
+        eval_dict['max_drawdown'] = float(self.calculate_max_drawdown())
+        
+        outPut = wd + f'/RESULTS/FOLD{fold}/OTHERS/PORTFOLIO_EVALUATION_{fold}.json'
+        with open(outPut, 'w') as file:
+            json.dump(eval_dict, file, indent=4)
         
         output_text = (
-            f'Final Total Capital: ${round(self.cap_total, 2)} \n'
-            + f'Investment Period: {start_date} - {end_date} ({investment_duration} Business Days) \n'
-            + f'Portfolio ROI: {round(100 * (self.cap_total / self.cap_start - 1), 2)}% \n'
-            + f'Benchmark ROI: {round(benchmark_return, 2)}% \n'
-            + f'Risk-free Rate: {round(Rf / 252 * investment_duration * 100, 2)}% \n'
-            + f'Portfolio Alpha: {round(alpha, 4)} \n'
-            + f'Portfolio Beta: {round(beta, 4)} \n'
-            + f'Portfolio Sharpe Ratio: {round(sharpe_ratio, 4)} \n'
-            + f'Portfolio Treynor Ratio: {round(treynor_ratio, 4)} \n'
-            + f'Portfolio Information Ratio: {round(information_ratio, 4)} \n'
-            + f'Portfolio Max Drawdown: {round(max_drawdown * 100, 2)}%'
+            "======================================== \n Portfolio Performance\n======================================== \n"
+            + f'Final Total Capital: ${self.cap_total:.2f} \n'
+            + f'Investment Period: {start_date} - {end_date} ({self.investment_duration} Business Days) \n'
+            + f'Annualized Portfolio ROI: {eval_dict['portfolio_return']:.2f}% \n'
+            + f'Annualized Benchmark ROI: {eval_dict['benchmark_return']:.2f}% \n'
+            + f'Risk-free Rate: {eval_dict['Rf_return']:.2f}% \n'
+            + f'\nMean Daily Return: {eval_dict['mean_return']:.2f}% \n'
+            + f'StDev Daily Return: {eval_dict['std_return']:.2f}% \n'
+            + f'\nPortfolio Alpha: {eval_dict['alpha']:.4f} \n'
+            + f'Portfolio Beta: {eval_dict['beta']:.4f} \n'
+            + f'Portfolio Sharpe Ratio: {eval_dict['sharpe_ratio']:.4f} \n'
+            + f'Benchmark Sharpe Ratio: {eval_dict['sharpe_ratio_benchmark']:.4f} \n'
+            + f'Portfolio Sortino Ratio: {eval_dict['sortino_ratio']:.4f} \n'
+            + f'Benchmark Sortino Ratio: {eval_dict['sortino_ratio_benchmark']:.4f} \n'
+            + f'Portfolio Information Ratio: {eval_dict['information_ratio']:.4f} \n'
+            + f'Portfolio Max Drawdown: {(eval_dict['max_drawdown']):.2f}%'
             )
         
         outPut = wd + f'/RESULTS/FOLD{fold}/PORTFOLIO_EVALUATION_{fold}.txt'
@@ -514,7 +540,7 @@ class StockPortfolio:
         market_excess = benchmark_returns - (Rf / 252) 
         beta = self.calculate_beta(benchmark_returns)
         expected_return = (Rf / 252) + beta * np.mean(market_excess)
-        alpha = np.mean(portfolio_returns) - expected_return
+        alpha = 252 * (np.mean(portfolio_returns) - expected_return)
         return alpha
     
     def calculate_beta(self, benchmark_returns):
@@ -524,35 +550,39 @@ class StockPortfolio:
         beta = covariance / variance if variance != 0 else 0
         return beta
     
-    def calculate_sharpe_ratio(self, Rf):
-        returns = np.array(self.returns_history)
+    def calculate_sharpe_ratio(self, Rf, benchmark = None):
+        if benchmark is None: returns = np.array(self.returns_history)
+        else: returns = np.array(benchmark)
         excess_returns = returns - (Rf / 252)
         mean_excess_return = np.mean(excess_returns)
-        std_dev = np.std(returns)
-        sharpe_ratio = mean_excess_return / std_dev if std_dev != 0 else 0
+        std_dev = np.std(excess_returns)
+        sharpe_ratio = np.sqrt(252) * mean_excess_return / std_dev if std_dev != 0 else 0
         return sharpe_ratio
 
-    def calculate_treynor_ratio(self, benchmark_returns, Rf):
-        portfolio_returns = np.array(self.returns_history)
-        excess_returns = portfolio_returns - (Rf / 252)
-        beta = self.calculate_beta(benchmark_returns)
+    def calculate_sortino_ratio(self, Rf, benchmark = None):
+        if benchmark is None: returns = np.array(self.returns_history)
+        else: returns = np.array(benchmark)
+        excess_returns = returns - (Rf / 252)
+        downside_returns = excess_returns[excess_returns < 0]
+        downside_deviation = np.std(downside_returns) if len(downside_returns) > 0 else 0
         mean_excess_return = np.mean(excess_returns)
-        treynor_ratio = mean_excess_return / beta if beta != 0 else 0
-        return treynor_ratio
+        sortino_ratio = np.sqrt(252) * mean_excess_return / downside_deviation if downside_deviation != 0 else 0
+        return sortino_ratio
+
 
     def calculate_information_ratio(self, benchmark_returns):
         portfolio_returns = np.array(self.returns_history)
         tracking_diff = portfolio_returns - benchmark_returns
         tracking_error = np.std(tracking_diff)
         mean_excess_return = np.mean(portfolio_returns - benchmark_returns)
-        info_ratio = mean_excess_return / tracking_error if tracking_error != 0 else 0
+        info_ratio = np.sqrt(252) * mean_excess_return / tracking_error if tracking_error != 0 else 0
         return info_ratio
     
     def calculate_max_drawdown(self):
         cumulative_returns = self.portfolio_history.groupby('Current_Date')['Cap_Total'].max()
         running_max = np.maximum.accumulate(cumulative_returns)
         drawdowns = (cumulative_returns - running_max) / running_max
-        max_drawdown = np.min(drawdowns)
+        max_drawdown = np.min(drawdowns) * 100
         return max_drawdown
     
 
@@ -587,7 +617,7 @@ for sector in lib_sectors:
     temperature = lib_params[sector]['temp_optim']
     
     for ticker in lib_tickers[sector]:
-        inPut = wd + f'/DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
+        inPut = wd + f'/PROCESSED_DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
         data_process = pd.read_csv(
             inPut,
             parse_dates = ['Date'],
@@ -638,7 +668,7 @@ def EMA(series, n):
     """Calculate Exponential Moving Average (EMA)."""
     return series.ewm(span=n, adjust=False).mean()
 
-inPut = raw_wd + '/spy_us_d.csv'
+inPut = wd + '/RAW_DATA/spy_us_d.csv'
 data_spy = pd.read_csv(
     inPut,
     parse_dates = ['Date'],
@@ -671,7 +701,7 @@ for date, df in data_backt_df.groupby(data_backt_df.index):
 spy_returns = data_spy['Close'].pct_change()
 spy_returns = spy_returns.reindex(data_backt_df.index.unique())
 
-inPut = raw_wd + '/2yusy_b_d.csv'
+inPut = wd + '/RAW_DATA/2yusy_b_d.csv'
 data_t2y = pd.read_csv(
     inPut,
     parse_dates = ['Date'],
@@ -688,7 +718,48 @@ portfolio.run_strategy(
     Rf_t2y
     )
 
+#Output LSTM Diagnostics
+class_df_dict = {x: pd.DataFrame() for x in range(num_classes)}
+diagnostics_df = pd.DataFrame()
 
+for sector in lib_sectors:
+    diagnostics_dict = lib_params[sector]['diagnostics']
+    
+    for c in range(num_classes):
+        temp_df = pd.DataFrame(diagnostics_dict[c], index = [0])
+        class_df_dict[c] = pd.concat([class_df_dict[c], temp_df])
+        diagnostics_dict.pop(c)
+        
+    temp_df = pd.DataFrame(diagnostics_dict, index = [0])
+    diagnostics_df = pd.concat([diagnostics_df, temp_df])
+
+summary_df = diagnostics_df.mean()
+
+output_text = (
+    "======================================== \n LSTM Model Performance\n======================================== \n"
+    + f"Train Loss: {summary_df['train_loss']:.4f} \n"
+    + f"Train Acc: {summary_df['train_acc']:.4f} \n"
+    + f"Val Loss: {summary_df['val_loss']:.4f} \n"
+    + f"Val Acc: {summary_df['val_acc']:.4f} \n"
+    + f"Val Precision: {summary_df['val_precision']:.4f} \n"
+    + f"Val Recall: {summary_df['val_recall']:.4f} \n"
+    + f"Val F1: {summary_df['val_f1']:.4f} \n"
+    )
+
+for c in range(num_classes):
+    summary_df = class_df_dict[c].mean()
+    output_text = output_text + (
+        f"\nClass {c} Acc: {summary_df['class_acc']:.4f} \n"
+        + f"Class {c} Precision: {summary_df['class_precision']:.4f} \n"
+        + f"Class {c} Predicted %: {(summary_df['predicted_pct'] * 100):.2f}% \n"
+        + f"Class {c} Actual %: {(summary_df['actual_pct'] * 100):.2f}% \n"
+        )
+
+outPut = wd + f'/RESULTS/FOLD{fold}/LSTM_MODEL_EVALUATION_{fold}.txt'
+with open(outPut, 'w') as file:
+    file.write(output_text)
+
+    
 
 
 

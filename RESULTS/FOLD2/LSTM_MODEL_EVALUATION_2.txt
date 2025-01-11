@@ -1,0 +1,20 @@
+======================================== 
+ LSTM Model Performance
+======================================== 
+Train Loss: 0.4545 
+Train Acc: 0.8075 
+Val Loss: 0.5173 
+Val Acc: 0.7611 
+Val Precision: 0.7622 
+Val Recall: 0.6964 
+Val F1: 0.7062 
+
+Class 0 Acc: 0.9136 
+Class 0 Precision: 0.7642 
+Class 0 Predicted %: 77.48% 
+Class 0 Actual %: 64.70% 
+
+Class 1 Acc: 0.4793 
+Class 1 Precision: 0.7602 
+Class 1 Predicted %: 22.52% 
+Class 1 Actual %: 35.30% 

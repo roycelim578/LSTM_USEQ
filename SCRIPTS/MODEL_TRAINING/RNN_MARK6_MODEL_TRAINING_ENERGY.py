@@ -10,6 +10,7 @@ Created on Mon Dec 30 21:59:58 2024
 # Libraries
 ##############################################
 
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,8 +29,7 @@ from torchmetrics import Accuracy, Precision, Recall, F1Score
 ##############################################
 
 #Directories
-wd = '/Users/roycelim/Desktop/QuantDev Project/RNN_USEQ/RNN_USEQ_MARK6'
-raw_wd = '/Users/roycelim/Desktop/QuantDev Project/Raw Data/USEQ'
+wd = str(Path(__file__).resolve().parents[2])
 
 lib_tickers = {
     'COMMUNICATION_SERVICES':
@@ -63,19 +63,13 @@ task = 'multiclass'
 #Training Settings
 lookback = 10
 batch_size = 16
-num_epochs = 20
+num_epochs = 30
 learning_rate = 1e-4
-l1_lambda = 2 * 1e-4
 hidden_size = 64
 num_layers = 2
 dropout = 0.4
-'''
-Justification for choice of Class Weights: 
-- Introduced Accuracy bias against 'buy' labels to improve its Precision
-- This is to reflect risk aversion (as percentage losses are penalised more heavily than pervantage gains are rewarded)
-- This is especially the case given that this strategy is designed for margin trading and has a wide selection of stocks
-'''
-class_weights = [0.66, 0.34]
+class_weights = [0.5, 0.5]
+l1_lambda = 2 * 1e-4
 
 #Miscellaneous
 sector = lib_sectors[sector_ind]
@@ -231,7 +225,7 @@ for fold in range(n_folds):
     
     #Loading & Processing Data
     for ticker in tickers:
-        inPut = wd + f'/DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
+        inPut = wd + f'/PROCESSED_DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
         data_process = pd.read_csv(
             inPut,
             parse_dates = ['Date'],
@@ -334,10 +328,26 @@ for fold in range(n_folds):
         recall_val = recall_metric(all_outputs, all_labels).item()
         f1_val = f1_metric(all_outputs, all_labels).item()
             
-        print(f"Epoch [{epoch+1}/{num_epochs}], "
-              f"Train Loss: {epoch_train_loss:.4f}, Train Acc: {epoch_train_acc:.4f}, "
-              f"Val Loss: {epoch_val_loss:.4f}, Val Acc: {epoch_val_acc:.4f}, "
-              f"Val Precision: {precision_val:.4f}, Val Recall: {recall_val:.4f}, Val F1: {f1_val:.4f}")
+        diagnostics_dict = {
+            'train_loss': float(epoch_train_loss),
+            'train_acc': float(epoch_train_acc),
+            'val_loss': float(epoch_val_loss),
+            'val_acc': float(epoch_val_acc),
+            'val_precision': float(precision_val),
+            'val_recall': float(recall_val),
+            'val_f1': float(f1_val)
+            }
+        
+        output_text = (
+            f"Epoch [{epoch+1}/{num_epochs}] \n"
+            + f"Train Loss: {diagnostics_dict['train_loss']:.4f} \n"
+            + f"Train Acc: {diagnostics_dict['train_acc']:.4f} \n"
+            + f"Val Loss: {diagnostics_dict['val_loss']:.4f} \n"
+            + f"Val Acc: {diagnostics_dict['val_acc']:.4f} \n"
+            + f"Val Precision: {diagnostics_dict['val_precision']:.4f} \n"
+            + f"Val Recall: {diagnostics_dict['val_recall']:.4f} \n"
+            + f"Val F1: {diagnostics_dict['val_f1']:.4f} \n"
+            )
         
         # Initialize metrics for per-class accuracy, precision, recall
         accuracy_per_class = Accuracy(task = task, num_classes = num_classes, average = None).to(device)
@@ -345,19 +355,32 @@ for fold in range(n_folds):
     
         
         # Compute class-wise metrics
-        class_acc = accuracy_per_class(all_outputs, all_labels)
-        class_prec = precision_per_class(all_outputs, all_labels)
+        class_acc = accuracy_per_class(all_outputs, all_labels).numpy()
+        class_prec = precision_per_class(all_outputs, all_labels).numpy()
         
         # Array of Outputs and Labels
         pred_ind = torch.argmax(torch.softmax(all_outputs, dim = -1), dim = -1).numpy()
         actual_ind = all_labels.numpy()
         
-        # Print class-wise accuracy, precision and occurance
+        # Print class-wise accuracy, precision and occurrence
         for c in range(num_classes):
-            pred_prop = round(np.mean(pred_ind == c) * 100, 1)
-            actual_prop = round(np.mean(actual_ind == c) * 100, 1)
-            print(f"Class {c} - Accuracy: {class_acc[c]:.4f}, Precision: {class_prec[c]:.4f}, Predicted: {pred_prop}%, Actual: {actual_prop}%")
-            
+            pred_prop = np.mean(pred_ind == c)
+            actual_prop = np.mean(actual_ind == c)
+            diagnostics_dict[c] = {
+                'class_acc': class_acc[c],
+                'class_precision': class_prec[c],
+                'predicted_pct': pred_prop,
+                'actual_pct': actual_prop
+                }
+            output_text = output_text + (
+                f"\nClass {c} Acc: {diagnostics_dict[c]['class_acc']:.4f} \n"
+                + f"Class {c} Precision: {diagnostics_dict[c]['class_precision']:.4f} \n"
+                + f"Class {c} Predicted %: {(diagnostics_dict[c]['predicted_pct'] * 100):.2f}% \n"
+                + f"Class {c} Actual %: {(diagnostics_dict[c]['actual_pct'] * 100):.2f}% \n"
+                )
+        
+        print(output_text)
+
     #Temperature Scaler
     temp_scaler = TemperatureScaler(model)
     _, temp_optim = temp_scaler.set_temperature(valid_loader, device=device)
@@ -366,16 +389,16 @@ for fold in range(n_folds):
 # Plotting and Output
 ##############################################
     
-    #Ploting Loss and Accuracy Metrics
-    plt.figure(figsize=(10,5))
-    plt.subplot(1,2,1)
+    #Plotting Loss and Accuracy Metrics
+    fig = plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
     plt.plot(train_losses, label='Train Loss')
     plt.plot(valid_losses, label='Valid Loss')
     plt.title('Loss over epochs')
     plt.legend()
     plt.grid(True)
     
-    plt.subplot(1,2,2)
+    plt.subplot(1, 2, 2)
     plt.plot(train_accuracies, label='Train Acc')
     plt.plot(valid_accuracies, label='Valid Acc')
     plt.title('Accuracy over epochs')
@@ -384,18 +407,29 @@ for fold in range(n_folds):
     
     plt.tight_layout()
     
-    #Printing learned feature weights and alpha
+    outPut = wd + f'/RESULTS/FOLD{fold}/TRAIN_VALID_PLOT/TRAIN_VALID_PLOT_{sector}_{fold}.png'
+    fig.savefig(outPut)
+
+    #Saving and printing learned feature weights and alpha
     with torch.no_grad():
-        print("Learned Feature Weights:", model.feature_weights.cpu().numpy())
-        print("Relative Weights (softmax):", torch.softmax(model.feature_weights, dim=0).cpu().numpy())
-        print("Optimized alpha:", float(torch.sigmoid(model.logit_alpha).detach()))
+        learned_feature_weights = model.feature_weights.cpu().numpy()
+        print("Learned Feature Weights:", learned_feature_weights)
+        
+        learned_relative_weights = torch.softmax(model.feature_weights, dim=0).cpu().numpy()
+        learned_relative_weights = dict(zip(data_process.columns.values[:len(data_process.columns) - 1], learned_relative_weights))
+        print("Relative Weights (softmax):", learned_relative_weights)
+        
+        learned_alpha = float(torch.sigmoid(model.logit_alpha).detach())
+        print("Optimized alpha:", learned_alpha)
     
     #Save Results
     outPut = wd + f'/MODELS/FOLD{fold}/RNN_MARK6_MODEL_{sector}_{fold}.pth'
     torch.save({
         'backtest_ind': valid_ind,
         'model_state': model.state_dict(),
-        'temp_optim': temp_optim
+        'temp_optim': temp_optim,
+        'diagnostics': diagnostics_dict,
+        'relative_weights': learned_relative_weights
             },
         outPut
         )

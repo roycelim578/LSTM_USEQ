@@ -1,0 +1,18 @@
+======================================== 
+ Portfolio Performance
+======================================== 
+Annualized Portfolio ROI: 44.55% 
+Annualized Benchmark ROI: 13.78% 
+Risk-free Rate: 1.82% 
+
+Mean Daily Return: 0.16% 
+StDev Daily Return: 2.68% 
+
+Portfolio Alpha: 0.2360 
+Portfolio Beta: 1.2788 
+Portfolio Sharpe Ratio: 0.9114 
+Benchmark Sharpe Ratio: 0.7935 
+Portfolio Sortino Ratio: 1.4174 
+Benchmark Sortino Ratio: 0.9853 
+Portfolio Information Ratio: 0.6873 
+Portfolio Max Drawdown: -33.68%

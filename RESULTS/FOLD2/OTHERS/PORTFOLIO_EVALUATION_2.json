@@ -1,0 +1,15 @@
+{
+    "portfolio_return": 71.7809449274369,
+    "benchmark_return": 22.858909193707955,
+    "Rf_return": 1.629,
+    "mean_return": 0.2383870880906389,
+    "std_return": 3.080381407288442,
+    "alpha": 0.470228972676622,
+    "beta": 0.5178534757039397,
+    "sharpe_ratio": 1.1951962643349758,
+    "sharpe_ratio_benchmark": 0.8122261796988554,
+    "sortino_ratio": 1.9207187338443028,
+    "sortino_ratio_benchmark": 0.8942360005112132,
+    "information_ratio": 0.7479977257899988,
+    "max_drawdown": -39.84015518917971
+}

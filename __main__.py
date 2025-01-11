@@ -13,6 +13,7 @@ Created on Mon Dec 30 19:05:16 2024
 import os
 import concurrent.futures
 import subprocess
+from pathlib import Path
 
 
 ##############################################
@@ -20,21 +21,22 @@ import subprocess
 ##############################################
 
 # Directories
-wd = '/Users/roycelim/Desktop/QuantDev Project/RNN_USEQ/RNN_USEQ_MARK6'
-raw_wd = '/Users/roycelim/Desktop/QuantDev Project/Raw Data/USEQ'
+wd = str(Path(__file__).resolve().parents[0])
 
 lib_phases = [
     'DATA_PROCESSING',
     'MODEL_TRAINING',
-    'STRATEGY_BACKTESTING'
+    'STRATEGY_BACKTESTING',
+    'FINAL_SUMMARY'
 ]
 
 # Settings
-phases = [2]  # List of phase indices to run; modify as needed
+phases = [2, 3]  # List of phase indices to run; modify as needed
 
 ##############################################
 # Execution
 ##############################################
+
 # Functions
 def execute_script(script_path):
     """
@@ -50,10 +52,6 @@ def execute_script(script_path):
 # Run Scripts
 if __name__ == "__main__":
     for i in phases:
-        # Validate phase index
-        if i < 0 or i >= len(lib_phases):
-            print(f"Invalid phase index: {i}. Skipping.")
-            continue
 
         phase = lib_phases[i]
         print(f"\nStarting phase: {phase}")

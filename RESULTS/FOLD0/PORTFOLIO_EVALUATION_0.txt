@@ -1,11 +1,20 @@
-Final Total Capital: $1452750.86 
+======================================== 
+ Portfolio Performance
+======================================== 
+Final Total Capital: $1410288.99 
 Investment Period: 2016-08-25 - 2018-04-30 (437 Business Days) 
-Portfolio ROI: 45.28% 
-Benchmark ROI: 21.4% 
-Risk-free Rate: 1.37% 
-Portfolio Alpha: 0.0004 
-Portfolio Beta: 1.9689 
-Portfolio Sharpe Ratio: 0.0431 
-Portfolio Treynor Ratio: 0.0007 
-Portfolio Information Ratio: 0.0308 
-Portfolio Max Drawdown: -29.53%
+Annualized Portfolio ROI: 23.66% 
+Annualized Benchmark ROI: 12.34% 
+Risk-free Rate: 0.79% 
+
+Mean Daily Return: 0.11% 
+StDev Daily Return: 2.50% 
+
+Portfolio Alpha: 0.0385 
+Portfolio Beta: 2.0889 
+Portfolio Sharpe Ratio: 0.6968 
+Benchmark Sharpe Ratio: 1.0408 
+Portfolio Sortino Ratio: 0.9613 
+Benchmark Sortino Ratio: 1.1748 
+Portfolio Information Ratio: 0.4702 
+Portfolio Max Drawdown: -22.55%

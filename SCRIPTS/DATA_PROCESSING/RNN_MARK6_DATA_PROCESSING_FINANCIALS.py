@@ -14,15 +14,14 @@ import json
 import pandas as pd
 import numpy as np
 from arch import arch_model
-
+from pathlib import Path
 
 ##############################################
 # Set Up
 ##############################################
 
 #Directories
-wd = '/Users/roycelim/Desktop/QuantDev Project/RNN_USEQ/RNN_USEQ_MARK6'
-raw_wd = '/Users/roycelim/Desktop/QuantDev Project/Raw Data/USEQ'
+wd = str(Path(__file__).resolve().parents[2])
 
 lib_tickers = {
     'COMMUNICATION_SERVICES':
@@ -48,7 +47,7 @@ lib_sectors = [
 #Settings
 sector_ind = 3
 forecast_period = 5
-min_return = 3
+min_return = 2
 backtest_startdate = '2013-01-02'
 backtest_enddate = '2024-12-20'
 n_folds = 5
@@ -153,7 +152,8 @@ def categorizeReturn(x, ret):
 
 
 #Pre-loading Earnings Data
-with open(f'/Users/roycelim/Desktop/QuantDev Project/Raw Data/USEQ/EARNINGS/EARNINGS_{sector}.json', 'r') as f:
+inPut = wd + f'/RAW_DATA/EARNINGS/EARNINGS_{sector}.json'
+with open(inPut, 'r') as f:
     earnings_raw_json = json.load(f)
 
 #Pre-loading Macro Data
@@ -163,7 +163,7 @@ macro_raw = pd.DataFrame(
     )
 
 for header in macro_raw.columns:
-    inPut = raw_wd + f'/MACRO/{header}_20132024_RAW.csv'
+    inPut = wd + f'/RAW_DATA/MACRO/{header}_20132024_RAW.csv'
     macro_raw_series = pd.read_csv(inPut,
                            parse_dates = ['observation_date'],
                            index_col = 'observation_date')
@@ -171,8 +171,10 @@ for header in macro_raw.columns:
     macro_raw[header] = macro_raw[header].ffill().fillna(0)
 
 #Loading Price Data & Concatenating LSTM Dataset
+data_dict = {x: None for x in tickers}
+
 for ticker in tickers:
-    inPut = raw_wd + f'/{sector}/{ticker.lower()}_us_d.csv'
+    inPut = wd + f'/RAW_DATA/{sector}/{ticker.lower()}_us_d.csv'
     data_raw = pd.read_csv(
         inPut,
         parse_dates = ['Date'],
@@ -220,8 +222,18 @@ for ticker in tickers:
     data_process = data_process.dropna()
     
     #Export Sector CSV File
-    outPut = wd + f'/DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
+    outPut = wd + f'/PROCESSED_DATA/RNN_MARK6_DATA_{sector}_{ticker}.csv'
     data_process.to_csv(outPut, index = True, index_label = 'Date')
+
+    
+
+
+
+
+
+
+
+
 
 
 
