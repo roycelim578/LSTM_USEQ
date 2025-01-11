@@ -14,7 +14,7 @@ output: pdf_document
 
 # 1. Introduction
 
-The use of deep learning in financial markets today is ubiquitous, as traders hope to harness its superior pattern recognition abilities to gain an edge over the market. Given that asset prices often exhibit temporal dependencies, Recurrent Neural Networks (RNN) have emerged as many traders' model of choice, as its in-built feedback loops enable it to effectively learn from sequential time series.
+The use of deep learning in financial markets today is ubiquitous, as traders hope to harness its superior pattern recognition abilities to gain an edge over the market. Given that asset prices often exhibit temporal dependencies, Recurrent Neural Networks (RNN) have emerged as many traders' model of choice, as their in-built feedback loops enable it to effectively learn from sequential time series.
 
 In this study, I chose to use *Long Short-Term Memory (LSTM)* networks — a class of RNNs that relies on both long-term and short-term states to generate outputs — to model share price movements of S&P 500 companies. Specifically, I sought to predict whether each stock's price would rise by at least 2% over a 5-day period. Thereafter, I designed and backtested a simple leveraged trading strategy based on my model's forecasts.
 
@@ -994,7 +994,7 @@ Portfolio Information Ratio: 0.6873
 Portfolio Max Drawdown: -33.68%
 ```
 
-In terms of absolute returns, the strategy achieved a sizable edge — attaining more than triple the the annualized ROI of the SPY benchmark with 30.77 percentage points of excess returns. This is confirmed by the portfolio's alpha of 23.60%, which represents the annualized excess return generated independent of the market's movements.
+In terms of absolute returns, the strategy achieved a sizable edge — attaining more than triple the annualized ROI of the SPY benchmark with 30.77 percentage points of excess returns. This is confirmed by the portfolio's alpha of 23.60%, which represents the annualized excess return generated independent of the market's movements.
 
 From a risk perspective, the strategy exhibited higher sensitivity to market fluctuations, with a beta of 1.2788, indicating that it was approximately 28% more volatile than the market. This was to be expected given that trades were executed with a 400% leverage. Yet despite this elevated market risk, the portfolio’s Sharpe ratio of 0.9114 was superior to the benchmark’s Sharpe ratio of 0.7935, highlighting that the strategy delivered better risk-adjusted returns relative to total volatility. Additionally, the Sortino ratio of 1.4174, which only penalizes downside risk, further underscores the portfolio's ability to generate high returns while mitigating negative volatility more effectively than the benchmark, which had a Sortino ratio of 0.9853.
 
