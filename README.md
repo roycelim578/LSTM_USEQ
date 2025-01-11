@@ -22,8 +22,26 @@ Read the full report [here](Trading_LargeCap_US_Equities_Using_LSTM_Models.pdf).
 
 - To view the model and strategy evaluation results for each fold, navigate to `RESULTS > FOLD{fold}`
 
-- For any further inquiries, please do not hesitate to contact me via [roycelim578@gmail.com](roycelim578@gmail.com)
+- For any further inquiries, please do not hesitate to contact me via <roycelim578@gmail.com>
 
+## License
+
+RNN_USEQ_MARK6 - Using LSTM models to predict U.S. stock price movement
+
+Copyright (C) 2025  Royce Lim
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 

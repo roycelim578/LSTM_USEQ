@@ -1,0 +1,9 @@
+# System Files
+*.DS_Store
+*.history
+*.Rhistory
+*.gitattributes
+
+#Additional Files
+README.html
+Trading_LargeCap_US_Equities_Using_LSTM_Models.md
