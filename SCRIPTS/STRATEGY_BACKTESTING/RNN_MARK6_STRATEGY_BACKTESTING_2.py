@@ -534,13 +534,17 @@ class StockPortfolio:
         outPut = wd + f'/RESULTS/FOLD{fold}/PORTFOLIO_EVALUATION_{fold}.txt'
         with open(outPut, 'w') as file:
             file.write(output_text)
+            
+    def calculate_annualized_return(self, returns):
+        annualized_return = (np.prod(np.array(returns) + 1) - 1) * 252 / len(returns)
+        return annualized_return
         
     def calculate_alpha(self, benchmark_returns, Rf):
-        portfolio_returns = np.array(self.returns_history)
-        market_excess = benchmark_returns - (Rf / 252) 
+        portfolio_return = self.calculate_annualized_return(self.returns_history)
+        market_excess = self.calculate_annualized_return(benchmark_returns) - Rf
         beta = self.calculate_beta(benchmark_returns)
-        expected_return = (Rf / 252) + beta * np.mean(market_excess)
-        alpha = 252 * (np.mean(portfolio_returns) - expected_return)
+        expected_return = Rf + beta * market_excess
+        alpha = portfolio_return - expected_return
         return alpha
     
     def calculate_beta(self, benchmark_returns):
@@ -553,29 +557,31 @@ class StockPortfolio:
     def calculate_sharpe_ratio(self, Rf, benchmark = None):
         if benchmark is None: returns = np.array(self.returns_history)
         else: returns = np.array(benchmark)
-        excess_returns = returns - (Rf / 252)
-        mean_excess_return = np.mean(excess_returns)
-        std_dev = np.std(excess_returns)
-        sharpe_ratio = np.sqrt(252) * mean_excess_return / std_dev if std_dev != 0 else 0
+        annualized_return = self.calculate_annualized_return(returns)
+        excess_return = annualized_return - Rf
+        std_dev = np.std(returns) * np.sqrt(252)
+        sharpe_ratio =  excess_return / std_dev if std_dev != 0 else 0
         return sharpe_ratio
 
     def calculate_sortino_ratio(self, Rf, benchmark = None):
         if benchmark is None: returns = np.array(self.returns_history)
         else: returns = np.array(benchmark)
+        annualized_return = self.calculate_annualized_return(returns)
+        excess_return = annualized_return - Rf
         excess_returns = returns - (Rf / 252)
         downside_returns = excess_returns[excess_returns < 0]
-        downside_deviation = np.std(downside_returns) if len(downside_returns) > 0 else 0
-        mean_excess_return = np.mean(excess_returns)
-        sortino_ratio = np.sqrt(252) * mean_excess_return / downside_deviation if downside_deviation != 0 else 0
+        downside_deviation = np.std(downside_returns) * np.sqrt(252) if len(downside_returns) > 0 else 0
+        sortino_ratio = excess_return / downside_deviation if downside_deviation != 0 else 0
         return sortino_ratio
 
 
     def calculate_information_ratio(self, benchmark_returns):
         portfolio_returns = np.array(self.returns_history)
+        annualized_return = self.calculate_annualized_return(portfolio_returns)
+        excess_return = annualized_return - self.calculate_annualized_return(benchmark_returns)
         tracking_diff = portfolio_returns - benchmark_returns
-        tracking_error = np.std(tracking_diff)
-        mean_excess_return = np.mean(portfolio_returns - benchmark_returns)
-        info_ratio = np.sqrt(252) * mean_excess_return / tracking_error if tracking_error != 0 else 0
+        tracking_error = np.std(tracking_diff) * np.sqrt(252)
+        info_ratio = excess_return / tracking_error if tracking_error != 0 else 0
         return info_ratio
     
     def calculate_max_drawdown(self):

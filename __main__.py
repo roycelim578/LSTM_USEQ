@@ -31,7 +31,7 @@ lib_phases = [
 ]
 
 # Settings
-phases = [2, 3]  # List of phase indices to run; modify as needed
+phases = [0, 1, 2, 3]  # List of phase indices to run; modify as needed
 
 ##############################################
 # Execution

@@ -4,12 +4,12 @@
     "Rf_return": 0.7894,
     "mean_return": 0.1128787949678043,
     "std_return": 2.500149851011006,
-    "alpha": 0.03846178569471281,
+    "alpha": -0.013398143538535523,
     "beta": 2.0888878988434993,
-    "sharpe_ratio": 0.6968253491397777,
-    "sharpe_ratio_benchmark": 1.040814088490149,
-    "sortino_ratio": 0.9612689286153313,
-    "sortino_ratio_benchmark": 1.1748010730579181,
-    "information_ratio": 0.47024981380248604,
+    "sharpe_ratio": 0.5974320186364714,
+    "sharpe_ratio_benchmark": 1.095071597542593,
+    "sortino_ratio": 0.8241560631858943,
+    "sortino_ratio_benchmark": 1.2360433069603511,
+    "information_ratio": 0.338960974499939,
     "max_drawdown": -22.54866805872874
 }

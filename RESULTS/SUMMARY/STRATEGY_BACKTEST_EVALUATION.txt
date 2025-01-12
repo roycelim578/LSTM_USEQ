@@ -8,11 +8,11 @@ Risk-free Rate: 1.82%
 Mean Daily Return: 0.16% 
 StDev Daily Return: 2.68% 
 
-Portfolio Alpha: 0.2360 
+Portfolio Alpha: 0.2696 
 Portfolio Beta: 1.2788 
-Portfolio Sharpe Ratio: 0.9114 
-Benchmark Sharpe Ratio: 0.7935 
-Portfolio Sortino Ratio: 1.4174 
-Benchmark Sortino Ratio: 0.9853 
-Portfolio Information Ratio: 0.6873 
+Portfolio Sharpe Ratio: 1.0093 
+Benchmark Sharpe Ratio: 0.8487 
+Portfolio Sortino Ratio: 1.5823 
+Benchmark Sortino Ratio: 1.0580 
+Portfolio Information Ratio: 0.7750 
 Portfolio Max Drawdown: -33.68%
